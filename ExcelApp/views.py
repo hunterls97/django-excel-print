@@ -2,24 +2,32 @@ from django.shortcuts import render
 from django.template import loader
 from django.urls import reverse
 from django.http import HttpResponse
+from django.http import JsonResponse
 import requests
+from . import rgen
 
+#Dictionary mapping report id to restful API
+d = {'2' : 'http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/bsmart_data/stp_ws/stp_pop_test/'}
+
+#index page for gui
 def index(request):
-	#template_name = 'ExcelApp/main.html'
-	#template = loader.get_template('ExcelApp/main.html')
 	return render(request, 'ExcelApp/index.html')
-	#return HttpResponse(template.render(request))
 
+#main page for filling the form
 def details(request):
 	return render(request, 'ExcelApp/main.html')
 
-
+#returns json for testing
 def getReport(request):
+	#report id
 	rid = request.POST['rid']
-	
-	if rid == '2':
-		response = requests.get('http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/stp_ws/stp_pop_test/')
+
+	#if the id is in the dictionary
+	if rid in d:
+		response = requests.get(d[rid])
+		rgen.report.formExcel(response.content, rid)
+
+		#displays the json
 		return HttpResponse(response)
-		#return render(request, 'ExcelApp/index.html')
 	else:
-		return render(request, 'ExcelApp/main.html')
+		return HttpResponse('No API in Dictionary')
