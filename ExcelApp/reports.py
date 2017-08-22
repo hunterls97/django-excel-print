@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 import xlsxwriter
-import json
 from io import BytesIO
 
 #each function holds a different report, dictionary maps each function to the report id
 class reports(object):
 
-	def r2(res):
+	#Summary of Contract Items by Area Forester
+	def r2(res, rid):
 		output = BytesIO()
 		workbook = xlsxwriter.Workbook(output, {'in_memory': True})
 		worksheet = workbook.add_worksheet()
 		title = 'Summary of Contract Items, Grouped by Area Forester'
 		title2 = 'Top Performers, Grouped by Area Forester'
+		year = '2017'
 
 		main_header1_format = workbook.add_format({
 			'bold':True,
@@ -63,7 +64,7 @@ class reports(object):
 			'align': 'left',
 		})
 
-		data = json.loads(res)
+		data = res
 
 		worksheet.set_column('A:F', 25)
 		worksheet.set_row(0,36)
@@ -71,7 +72,7 @@ class reports(object):
 		worksheet.merge_range('A1:F2','Natural Heritage and Forestry Division, Environmental Services Department',main_header1_format)
 		worksheet.insert_image('A1',r'\\ykr-apexp1\staticenv\York_Logo.png',{'x_offset':10,'y_offset':10,'x_scale':0.25,'y_scale':0.25})
 		#worksheet.insert_image('D1','\\ykr-fs1.ykregion.ca\Corp\WCM\EnvironmentalServices\Toolkits\DesignComms\ENVSubbrand\HighRes',{'x_offset':10,'y_offset':10,'x_scale':0.25,'y_scale':0.25})
-		worksheet.merge_range('A4:F4','CON#'+'2014'+'-Street Tree Planting and Establishment Activities',main_header2_format)
+		worksheet.merge_range('A4:F4','CON#'+ year +'-Street Tree Planting and Establishment Activities',main_header2_format)
 		worksheet.merge_range('A5:F5',title,title_format)
 
 		foresters = []
@@ -118,4 +119,236 @@ class reports(object):
 		xlsx_data = output.getvalue()
 		return xlsx_data
 
-	d  =  {'2' : r2}
+	#Costing Summary
+	def r6(res, rid):
+		output = BytesIO()
+		workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+		worksheet = workbook.add_worksheet()
+
+		title = 'Costing Summary'
+		year = '2014'
+
+		main_header1_format = workbook.add_format({
+			'bold':True,
+			'font_name':'Calibri',
+			'font_size':12,
+			'border':2, #2 is the value for thick border
+			'align':'center',
+			'valign':'top',
+		})
+
+		main_header2_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':18,
+			'font_color':'white',
+			'border':2,
+			'align':'left',
+			'bg_color':'black',
+		})
+
+		title_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':18,
+			'font_color':'white',
+			'border':2,
+			'align':'left',
+			'bg_color':'gray',
+		})
+
+		subtitle_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size': 14,
+			'font_color':'black',
+			'border':2,
+			'align':'left',
+			'bg_color':'#D3D3D3',
+		})
+
+		item_header_format = workbook.add_format({
+			'bold':True,
+			'font_name':'Calibri',
+			'font_size':12,
+			'border':2,
+			'align': 'left',
+			'bg_color':'gray',
+		})
+
+		item_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':12,
+			'align': 'left',
+		})
+
+		data = res
+
+		worksheet.set_column('A:G', 25)
+		worksheet.set_row(0,36)
+		worksheet.set_row(1,36)
+		worksheet.merge_range('A1:G2','Natural Heritage and Forestry Division, Environmental Services Department',main_header1_format)
+		worksheet.insert_image('A1',r'\\ykr-apexp1\staticenv\York_Logo.png',{'x_offset':10,'y_offset':10,'x_scale':0.25,'y_scale':0.25})
+		#worksheet.insert_image('D1','\\ykr-fs1.ykregion.ca\Corp\WCM\EnvironmentalServices\Toolkits\DesignComms\ENVSubbrand\HighRes',{'x_offset':10,'y_offset':10,'x_scale':0.25,'y_scale':0.25})
+		worksheet.merge_range('A4:G4','CON#'+ year +'-Street Tree Planting and Establishment Activities',main_header2_format)
+		worksheet.merge_range('A5:G5',title,title_format)
+		worksheet.merge_range('A6:G6',' ')
+		item_fields = ['Item', 'Quantity', 'Last Year Price', 'This Year Price', 'This Year Actual', 'Estimated Total', 'Total']
+
+		programs = {'Capital Infrastructure' : [],
+		'Infill / Retrofit' : [],
+		'EAB Replacement' : []} 
+
+		#separates items by programs
+		for idx, val in enumerate(data["items"]):
+			if data["items"][idx]["program"] == "Capital Infrastructure":
+				programs['Capital Infrastructure'].append(list(data["items"][idx].values()))
+			elif data["items"][idx]["program"] == "Infill / Retrofit":
+				programs['Infill / Retrofit'].append(list(data["items"][idx].values()))
+			else:
+				programs['EAB Replacement'].append(list(data["items"][idx].values()))
+
+		cr = 7
+
+		#print(programs)
+
+		for pid, program in enumerate(programs):
+			if programs[program]:
+				worksheet.merge_range('A' + str(cr) + ':G' + str(cr), program, title_format)
+				worksheet.write_row('A' + str(cr+1), item_fields, item_header_format)
+				cr += 2
+
+			mainItems = {'A' : [], 'B' : [], 'C' : [], 'D' : [], 'E' : [], 'F' : []}
+			miDict = {'A' : 'Tree Planting - Ball and Burlap Trees',
+			'B' : 'Tree Planting - Potted Perennials and Grass',
+			'C' : 'Tree Planting - Potted Shrubs',
+			'D' : 'Transplanting',
+			'E' : 'Stumping',
+			'F' : 'Watering'}
+
+			for idx, val in enumerate(programs[program]):
+				mainItems[programs[program][idx][1]].append(list(programs[program][idx])) #programs[program][idx][0] is type_id
+
+			for idx, val in enumerate(mainItems):
+				if mainItems[val]:
+					worksheet.merge_range('A' + str(cr) + ':G' + str(cr), miDict[val], subtitle_format)
+					cr += 1
+					for idx2, val2 in enumerate(mainItems[val]):
+						worksheet.write_row('A' + str(cr), mainItems[val][idx2], item_format)
+						cr += 1
+
+		worksheet.merge_range('A6:G6',' ')
+
+		#print(programs)
+
+		workbook.close()
+
+		xlsx_data = output.getvalue()
+		return xlsx_data
+
+		#Warranty Report Species Analysis
+	def r17(res, rid):
+		output = BytesIO()
+		workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+		worksheet = workbook.add_worksheet()
+
+		type = 'Year 1 Warranty' if rid == '17' else 'Year 2 Warranty' if rid == '18' else '12 Month Warranty'
+		title = 'Warranty Report Species Analysis ' + type
+		year = '2017'
+
+		main_header1_format = workbook.add_format({
+			'bold':True,
+			'font_name':'Calibri',
+			'font_size':12,
+			'border':2, #2 is the value for thick border
+			'align':'center',
+			'valign':'top',
+		})
+
+		main_header2_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':18,
+			'font_color':'white',
+			'border':2,
+			'align':'left',
+			'bg_color':'black',
+		})
+
+		title_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':18,
+			'font_color':'white',
+			'border':2,
+			'align':'left',
+			'bg_color':'gray',
+		})
+
+		item_header_format = workbook.add_format({
+			'bold':True,
+			'font_name':'Calibri',
+			'font_size':12,
+			'border':2,
+			'align': 'left',
+			'bg_color':'gray',
+		})
+
+		item_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':12,
+			'align': 'left',
+		})
+
+		data = res
+
+		worksheet.set_column('A:E', 25)
+		worksheet.set_row(0,36)
+		worksheet.set_row(1,36)
+		worksheet.merge_range('A1:E2','Natural Heritage and Forestry Division, Environmental Services Department',main_header1_format)
+		worksheet.insert_image('A1',r'\\ykr-apexp1\staticenv\York_Logo.png',{'x_offset':10,'y_offset':10,'x_scale':0.25,'y_scale':0.25})
+		#worksheet.insert_image('D1','\\ykr-fs1.ykregion.ca\Corp\WCM\EnvironmentalServices\Toolkits\DesignComms\ENVSubbrand\HighRes',{'x_offset':10,'y_offset':10,'x_scale':0.25,'y_scale':0.25})
+		worksheet.merge_range('A4:E4','CON#'+ year +'-Street Tree Planting and Establishment Activities',main_header2_format)
+		worksheet.merge_range('A5:E5',title,title_format)
+		worksheet.merge_range('A6:E6',' ')
+		item_fields = ['Species', 'Total Trees Inspected', 'Number of Trees Accepted', 'Number of Trees Rejected', 'Number of Trees Missing']
+		worksheet.write_row('A7', item_fields, item_header_format)
+
+
+		#MAIN DATA
+		cr = 8
+		species = []
+		totals = {}
+
+		for sid, spec in enumerate(data["items"]):
+			if not data["items"][sid]["species"] in species:
+				species.append(data["items"][sid]["species"])
+
+		species.sort()
+
+		for sid, spec in enumerate(species):
+			for idx, val in enumerate(data["items"]):
+				if data["items"][idx]["species"] == spec and "warrantyaction" in data["items"][idx]:
+					temp = [1,1 if data["items"][idx]["warrantyaction"] == 'Accept' else 0,
+					1 if data["items"][idx]["warrantyaction"] == 'Reject' else 0,
+					1 if data["items"][idx]["warrantyaction"] == 'Missing Tree' else 0]
+
+					if spec in totals:
+						totals[spec] = [totals[spec][0] + temp[0], totals[spec][1] + temp[1], totals[spec][2] + temp[2], totals[spec][3] + temp[3]]
+
+					else:
+						totals[spec] = [temp[0], temp[1], temp[2], temp[3]]
+
+
+			worksheet.write('A' + str(cr), species[sid], item_format)
+			worksheet.write_row('B' + str(cr), totals[spec], item_format)
+			cr += 1
+
+		#FORMULAE AND FOOTERS
+		worksheet.write('A' + str(cr), 'Totals: ', item_format)
+		worksheet.write_formula('B' + str(cr), '=SUM(B8:B' + str(cr-1) + ')', item_format)
+		worksheet.write_formula('C' + str(cr), '=SUM(C8:C' + str(cr-1) + ')', item_format)
+		worksheet.write_formula('D' + str(cr), '=SUM(D8:D' + str(cr-1) + ')', item_format)
+		worksheet.write_formula('E' + str(cr), '=SUM(E8:E' + str(cr-1) + ')', item_format)
+
+		workbook.close()
+
+		xlsx_data = output.getvalue()
+		return xlsx_data
+
+	d  =  {'2' : r2, '6' : r6, '17': r17, '18': r17, '19': r17}
