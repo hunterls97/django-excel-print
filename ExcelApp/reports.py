@@ -181,6 +181,15 @@ class reports(object):
 
 		item_format.set_text_wrap()
 
+		item_format_money = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':12,
+			'align': 'left',
+			'num_format': '$#,##0',
+		})
+
+		item_format_money.set_text_wrap()
+
 		subtotal_format = workbook.add_format({
 			'font_name':'Calibri',
 			'font_size': 14,
@@ -189,9 +198,18 @@ class reports(object):
 			'bg_color':'#D3D3D3',
 		})
 
+		subtotal_format_money = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size': 14,
+			'font_color':'black',
+			'align':'left',
+			'bg_color':'#D3D3D3',
+			'num_format': '$#,##0',
+		})
+
 		data = res
 
-		worksheet.set_column('A:G', 35)
+		worksheet.set_column('A:G', 30)
 		worksheet.set_row(0,36)
 		worksheet.set_row(1,36)
 		worksheet.merge_range('A1:G2','Natural Heritage and Forestry Division, Environmental Services Department',main_header1_format)
@@ -230,10 +248,175 @@ class reports(object):
 			'C' : 'Tree Planting - Potted Shrubs',
 			'D' : 'Transplanting',
 			'E' : 'Stumping',
-			'F' : 'Watering'}
+			'F' : 'Watering',
+			'G' : 'Tree Maintenance',
+			'H' : 'Automated Vehicle Locating System'}
 
 			#print(programs)
-			items = {'A' : {}, 'B' : {}, 'C' : {}, 'D' : {}, 'E' : {}, 'F' : {}}
+			items = {'A' : {}, 'B' : {}, 'C' : {}, 'D' : {}, 'E' : {}, 'F' : {}, 'G' : {}, 'H' : {}}
+
+			#this is good
+			for idx, val in enumerate(programs[program]):
+				if "item" in programs[program][idx]:
+					if not programs[program][idx]["item"] in items[programs[program][idx]["sec"]]:
+						items[programs[program][idx]["sec"]].update({programs[program][idx]["item"] : [int(programs[program][idx]["quantity"]),
+							programs[program][idx]["lyp"] if "lyp" in programs[program][idx] else 0,
+							programs[program][idx]["pe"] if "pe" in programs[program][idx] else 0,
+							programs[program][idx]["up"] if "up" in programs[program][idx] else 0]})
+					else:
+						items[programs[program][idx]["sec"]][programs[program][idx]["item"]][0] += int(programs[program][idx]["quantity"])
+
+			for idx, val in enumerate(items):
+				if items[val]:
+					worksheet.merge_range('A' + str(cr) + ':G' + str(cr), miDict[val], subtitle_format)
+					cr += 1
+					start = cr
+					for idx2, val2 in enumerate(items[val]):
+						d = [val2]
+						d.extend(items[val][val2])
+						for i, v in enumerate(d):
+							d[i] = '$0' if i >= 2 and d[i] == 0 else d[i]
+
+						worksheet.write_row('A' + str(cr), d, item_format)
+						worksheet.write_formula('F' + str(cr), '=B' + str(cr) + '*D' + str(cr), item_format_money)
+						worksheet.write_formula('G' + str(cr), '=B' + str(cr) + '*E' + str(cr), item_format_money)
+						cr += 1
+
+					worksheet.write('A' + str(cr), 'SubTotal: ', subtotal_format)
+					worksheet.write_formula('B' + str(cr), '=SUM(B' + str(start) + ':B' + str(cr-1) + ')', subtotal_format)
+					worksheet.write('C' + str(cr), '', subtotal_format)
+					worksheet.write('D' + str(cr), '', subtotal_format)
+					worksheet.write('E' + str(cr), '', subtotal_format)
+					worksheet.write_formula('F' + str(cr), '=SUM(F' + str(start) + ':F' + str(cr-1) + ')', subtotal_format_money)
+					worksheet.write_formula('G' + str(cr), '=SUM(G' + str(start) + ':G' + str(cr-1) + ')', subtotal_format_money)
+
+					worksheet.merge_range('A' + str(cr+1) + ':G' + str(cr+1),' ')
+					cr += 2
+
+
+		#print(programs)
+		workbook.close()
+
+		xlsx_data = output.getvalue()
+		return xlsx_data
+
+	def r7(res, rid):
+		output = BytesIO()
+		workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+		worksheet = workbook.add_worksheet()
+
+		title = 'Bid Summary'
+		year = '2014'
+
+		main_header1_format = workbook.add_format({
+			'bold':True,
+			'font_name':'Calibri',
+			'font_size':12,
+			'border':2, #2 is the value for thick border
+			'align':'center',
+			'valign':'top',
+		})
+
+		main_header2_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':18,
+			'font_color':'white',
+			'border':2,
+			'align':'left',
+			'bg_color':'black',
+		})
+
+		title_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':18,
+			'font_color':'white',
+			'border':2,
+			'align':'left',
+			'bg_color':'gray',
+		})
+
+		subtitle_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size': 14,
+			'font_color':'black',
+			'border':2,
+			'align':'left',
+			'bg_color':'#D3D3D3',
+		})
+
+		item_header_format = workbook.add_format({
+			'bold':True,
+			'font_name':'Calibri',
+			'font_size':12,
+			'border':2,
+			'align': 'left',
+			'bg_color':'gray',
+		})
+
+		item_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':12,
+			'align': 'left',
+		})
+
+		item_format.set_text_wrap()
+
+		item_format_money = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size':12,
+			'align': 'left',
+			'num_format': '$#,##0',
+		})
+
+		item_format_money.set_text_wrap()
+
+		subtotal_format = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size': 14,
+			'font_color':'black',
+			'align':'left',
+			'bg_color':'#D3D3D3',
+		})
+
+		subtotal_format_money = workbook.add_format({
+			'font_name':'Calibri',
+			'font_size': 14,
+			'font_color':'black',
+			'align':'left',
+			'bg_color':'#D3D3D3',
+			'num_format': '$#,##0',
+		})
+
+		data = res
+
+		worksheet.set_column('A:F', 30)
+		worksheet.set_row(0,36)
+		worksheet.set_row(1,36)
+		worksheet.merge_range('A1:G2','Natural Heritage and Forestry Division, Environmental Services Department',main_header1_format)
+		worksheet.insert_image('A1',r'\\ykr-apexp1\staticenv\York_Logo.png',{'x_offset':10,'y_offset':10,'x_scale':0.25,'y_scale':0.25})
+		#worksheet.insert_image('D1','\\ykr-fs1.ykregion.ca\Corp\WCM\EnvironmentalServices\Toolkits\DesignComms\ENVSubbrand\HighRes',{'x_offset':10,'y_offset':10,'x_scale':0.25,'y_scale':0.25})
+		worksheet.merge_range('A4:G4','CON#'+ year +'-Street Tree Planting and Establishment Activities',main_header2_format)
+		worksheet.merge_range('A5:G5',title,title_format)
+		worksheet.merge_range('A6:G6',' ')
+		item_fields = ['Item Number', 'Item', 'Unit', 'Quantity', 'Unit Price', 'Total']
+
+		cr = 7
+
+		#print(programs)
+
+		for idx, val in enumerate(data["items"]):
+
+			miDict = {'A' : 'A - Tree Planting - Ball and Burlap Trees',
+			'B' : 'B - Tree Planting - Potted Perennials and Grass',
+			'C' : 'C - Tree Planting - Potted Shrubs',
+			'D' : 'D - Transplanting',
+			'E' : 'E - Stumping',
+			'F' : 'F - Watering',
+			'G' : 'G - Tree Maintenance',
+			'H' : 'H - Automated Vehicle Locating System'}
+
+			print(data["items"])
+			items = {'A' : {}, 'B' : {}, 'C' : {}, 'D' : {}, 'E' : {}, 'F' : {}, 'G' : {}, 'H' : {}}
 
 			#this is good
 			for idx, val in enumerate(programs[program]):
@@ -255,8 +438,8 @@ class reports(object):
 						d = [val2]
 						d.extend(items[val][val2])
 						worksheet.write_row('A' + str(cr), d, item_format)
-						worksheet.write_formula('F' + str(cr), '=B' + str(cr) + '*D' + str(cr), item_format)
-						worksheet.write_formula('G' + str(cr), '=B' + str(cr) + '*E' + str(cr), item_format)
+						worksheet.write_formula('F' + str(cr), '=B' + str(cr) + '*D' + str(cr), item_format_money)
+						worksheet.write_formula('G' + str(cr), '=B' + str(cr) + '*E' + str(cr), item_format_money)
 						cr += 1
 
 					worksheet.write('A' + str(cr), 'SubTotal: ', subtotal_format)
@@ -264,17 +447,14 @@ class reports(object):
 					worksheet.write('C' + str(cr), '', subtotal_format)
 					worksheet.write('D' + str(cr), '', subtotal_format)
 					worksheet.write('E' + str(cr), '', subtotal_format)
-					worksheet.write_formula('F' + str(cr), '=SUM(F' + str(start) + ':F' + str(cr-1) + ')', subtotal_format)
-					worksheet.write_formula('G' + str(cr), '=SUM(G' + str(start) + ':G' + str(cr-1) + ')', subtotal_format)
+					worksheet.write_formula('F' + str(cr), '=SUM(F' + str(start) + ':F' + str(cr-1) + ')', subtotal_format_money)
+					worksheet.write_formula('G' + str(cr), '=SUM(G' + str(start) + ':G' + str(cr-1) + ')', subtotal_format_money)
 
 					worksheet.merge_range('A' + str(cr+1) + ':G' + str(cr+1),' ')
 					cr += 2
 
-		print(getWateringItems(2014))
-
 
 		#print(programs)
-
 		workbook.close()
 
 		xlsx_data = output.getvalue()
@@ -388,4 +568,4 @@ class reports(object):
 		xlsx_data = output.getvalue()
 		return xlsx_data
 
-	d  =  {'2' : r2, '6' : r6, '17': r17, '18': r17, '19': r17}
+	d  =  {'2' : r2, '6' : r6, '7' : r7, '17': r17, '18': r17, '19': r17}

@@ -9,7 +9,8 @@ from . import rgen
 
 #Dictionary mapping report id to restful API
 d = {'2' : 'http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/bsmart_data/stp_ws/stp_pop_test/',
-	 '6' : 'http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/bsmart_data/stp_ws/stp_costing_bid/',
+	 '6' : 'http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/bsmart_data/stp_ws/stp_costing_bid/2014',
+	 '7' : 'http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/bsmart_data/stp_ws/stp_costing_bid/2014',
 	 '17' : 'http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/bsmart_data/stp_ws/stp_warranty_1yr/',
 	 '18' : 'http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/bsmart_data/stp_ws/stp_warranty_2yr/',
 	 '19' : 'http://ykr-dev-apex.devyork.ca/apexenv/bsmart_data/bsmart_data/stp_ws/stp_warranty_12mo/'}
@@ -24,12 +25,13 @@ def details(request):
 
 #returns json for testing
 def getReport(request):
+	start = time.time()
 	#report id
-	rid = request.POST['rid']
+	rid = request.GET['rid']
 
 	#if the id is in the dictionary
 	if rid in d:
-		start = time.time()
+		
 		response = requests.get(d[rid])
 
 		it = json.loads(response.content)
